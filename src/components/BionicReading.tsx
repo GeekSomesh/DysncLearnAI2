@@ -74,29 +74,57 @@ export const BionicReading = ({
     };
   }, [isPlaying, audioElement, wordTimings]);
 
-  const words = text.split(/\s+/).filter(w => w.length > 0);
+  // Split into tokens preserving whitespace so rendering matches original spacing/punctuation.
+  const tokens = text.match(/\S+|\s+/g) || [];
 
-  return (
-    <div className={`bionic-reading ${className}`}>
-      {words.map((word, idx) => {
-        const isHighlighted = idx === currentWordIndex;
-        const firstChar = word.charAt(0);
-        const restChars = word.slice(1);
+  // (timing estimation uses whitespace-split words elsewhere) - render tokens below
 
-        return (
-          <span
-            key={idx}
-            className={`inline-block mr-1 transition-all duration-100 ${
-              isHighlighted
-                ? 'bg-yellow-300 px-1 py-0.5 rounded font-bold scale-105'
-                : ''
-            }`}
-          >
-            <span className="font-bold">{firstChar}</span>
-            {restChars}
-          </span>
-        );
-      })}
-    </div>
-  );
+  // Render tokens while mapping visible word tokens to the timingWords index.
+  let visibleWordIndex = -1;
+
+  const renderToken = (token: string, tokenIdx: number) => {
+    // Preserve whitespace exactly
+    if (/^\s+$/.test(token)) {
+      return (
+        <span key={`ws-${tokenIdx}`} className="whitespace-pre">
+          {token}
+        </span>
+      );
+    }
+
+    // Try to extract core word (letters/numbers/apostrophes/hyphens) and surrounding punctuation
+    const match = token.match(/^(\W*)([\p{L}\p{N}'’\-]+)(\W*)$/u);
+    const leadingPunct = match ? match[1] : '';
+    const core = match ? match[2] : token;
+    const trailingPunct = match ? match[3] : '';
+
+    // If core contains letters/numbers then it's counted as a timing word; otherwise (e.g., "—") skip counting
+    const isCountedWord = /[\p{L}\p{N}]/u.test(core);
+    if (isCountedWord) visibleWordIndex += 1;
+
+    const isCurrent = visibleWordIndex === currentWordIndex;
+
+    // Bionic lead length
+    const coreLen = core.length;
+    let highlightCount = 1;
+    if (coreLen <= 2) highlightCount = 1;
+    else if (coreLen <= 4) highlightCount = Math.ceil(coreLen * 0.5);
+    else highlightCount = Math.ceil(coreLen * 0.4);
+
+    const lead = core.slice(0, highlightCount);
+    const rest = core.slice(highlightCount);
+
+    return (
+      <span key={`t-${tokenIdx}`} className={`bionic-word ${isCurrent ? 'bionic-active' : ''}`}>
+        {leadingPunct}
+        <span className="bionic-lead">
+          <span className="font-bold">{lead}</span>
+        </span>
+        {rest}
+        {trailingPunct}
+      </span>
+    );
+  };
+
+  return <div className={`bionic-reading ${className}`}>{tokens.map((t, i) => renderToken(t, i))}</div>;
 };
