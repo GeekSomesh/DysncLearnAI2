@@ -4,6 +4,7 @@ import {
   loadResults,
   setRecommendationEnabled,
   getRecommendationStore,
+  applyRecommendations,
 } from "../lib/screenerStore";
 
 interface Props {
@@ -17,6 +18,8 @@ export const VisualCrowdingScreener = ({ onClose }: Props) => {
   const [showResults, setShowResults] = useState(false);
   const [recommendedEnabled, setRecommendedEnabled] = useState<boolean>(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [initialStore, setInitialStore] = useState<any>(null);
+  const [liveGlobal, setLiveGlobal] = useState<boolean>(true); // live global preview enabled by default
 
   // Note: live preview is applied locally via inline styles on the preview box below.
   // We avoid calling `applyRecommendations` here so the site-wide font doesn't toggle
@@ -38,8 +41,9 @@ export const VisualCrowdingScreener = ({ onClose }: Props) => {
       0.2 * Math.abs(weightNorm);
 
     // Map adjustment to risk level (1-5). Higher adjScore => higher risk (lower number)
-    // adjScore 0 => level 5 (No Risk). adjScore >= ~0.6 => level 1
-    let level = 5 - Math.round((adjScore / 0.8) * 4);
+    // We clamp adjScore to [0,1] then discretize: 0 -> 5 (No Risk), 1 -> 1 (High Risk)
+    const clamped = Math.min(Math.max(adjScore, 0), 1);
+    let level = 5 - Math.round(clamped * 4);
     if (level < 1) level = 1;
     if (level > 5) level = 5;
     return { adjScore, level };
@@ -47,21 +51,78 @@ export const VisualCrowdingScreener = ({ onClose }: Props) => {
 
   const { adjScore, level } = computeScore();
 
+  const levelLabel =
+    level === 1 ? "High Risk" : level === 5 ? "No Risk" : "Moderate";
+
   // level is used directly in the results UI; no separate label function required.
 
   function handleFinish() {
+    // Auto-save the current result upon finish for convenience.
+    const now = new Date().toISOString();
+    const toSave = {
+      date: now,
+      letterSpacing,
+      lineHeight,
+      fontWeight,
+      level,
+      adjScore,
+    };
+    try {
+      saveResult(toSave as any);
+      setHistory(loadResults());
+    } catch (e) {
+      console.error("Failed to auto-save screener result", e);
+    }
     setShowResults(true);
   }
 
+  // On mount capture initial global recommendation state
   useEffect(() => {
     try {
       const store = getRecommendationStore();
+      setInitialStore(store);
       setRecommendedEnabled(!!store?.enabled);
       setHistory(loadResults());
+      if (store?.enabled) {
+        // initialize sliders to existing global settings
+        setLetterSpacing(store.letterSpacing);
+        setLineHeight(store.lineHeight);
+        setFontWeight(store.fontWeight);
+      }
     } catch (e) {
       console.error(e);
     }
   }, []);
+
+  // Live global application effect
+  useEffect(() => {
+    try {
+      if (liveGlobal) {
+        applyRecommendations({
+          enabled: true,
+          letterSpacing,
+          lineHeight,
+          fontWeight,
+        });
+      } else {
+        // revert to initial store or disable if none
+        if (initialStore) {
+          applyRecommendations(initialStore);
+          setRecommendedEnabled(!!initialStore.enabled);
+        } else {
+          applyRecommendations({
+            enabled: false,
+            letterSpacing: 0,
+            lineHeight: 1.2,
+            fontWeight: 400,
+          });
+          setRecommendedEnabled(false);
+        }
+      }
+    } catch (e) {
+      console.error("Failed applying live global preview", e);
+    }
+  }, [letterSpacing, lineHeight, fontWeight, liveGlobal, initialStore]);
 
   return (
     <div className="p-6 w-full h-full overflow-auto">
@@ -82,7 +143,22 @@ export const VisualCrowdingScreener = ({ onClose }: Props) => {
             Reset
           </button>
           <button
-            onClick={onClose}
+            onClick={() => {
+              // On close revert to initial store if live preview was altering global styles.
+              if (liveGlobal) {
+                if (initialStore) {
+                  applyRecommendations(initialStore);
+                } else {
+                  applyRecommendations({
+                    enabled: false,
+                    letterSpacing: 0,
+                    lineHeight: 1.2,
+                    fontWeight: 400,
+                  });
+                }
+              }
+              onClose();
+            }}
             className="px-3 py-1 bg-purple-400 text-white rounded"
           >
             Close
@@ -123,6 +199,9 @@ export const VisualCrowdingScreener = ({ onClose }: Props) => {
             value={lineHeight}
             onChange={(e) => setLineHeight(Number(e.target.value))}
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Current risk estimate: Level {level} — {levelLabel}
+          </p>
         </div>
 
         <div className="mb-4">
@@ -161,7 +240,7 @@ export const VisualCrowdingScreener = ({ onClose }: Props) => {
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap items-center">
           <button
             onClick={handleFinish}
             className="px-4 py-2 bg-green-400 text-white rounded"
@@ -185,6 +264,12 @@ export const VisualCrowdingScreener = ({ onClose }: Props) => {
             className="px-4 py-2 bg-blue-300 text-white rounded"
           >
             Toggle Recommendation
+          </button>
+          <button
+            onClick={() => setLiveGlobal((v) => !v)}
+            className="px-4 py-2 bg-orange-300 text-white rounded"
+          >
+            Live Global: {liveGlobal ? "On" : "Off"}
           </button>
         </div>
       </div>

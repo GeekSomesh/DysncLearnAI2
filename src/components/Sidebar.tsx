@@ -26,7 +26,9 @@ interface SidebarProps {
     | "summarizer"
     | "screener"
     | "pricing"
-    | "questionnaire";
+    | "questionnaire"
+    | "notes";
+  onOpenNotes?: () => void;
 }
 
 export const Sidebar = ({
@@ -41,6 +43,7 @@ export const Sidebar = ({
   onToggleDyslexic,
   onShowStartup,
   currentView,
+  onOpenNotes,
 }: SidebarProps) => {
   return (
     <aside className="w-full lg:w-64 bg-[#E8E4F3] h-screen flex flex-col p-4 fixed lg:relative z-20">
@@ -66,10 +69,6 @@ export const Sidebar = ({
         </h2>
         <div className="space-y-2">
           {/* Removed: Search Chats and Mind Map buttons per user request */}
-          <button className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-purple-200 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400">
-            <FileText className="w-5 h-5" aria-hidden="true" />
-            <span className="font-['Comic_Sans_MS'] text-base">My Notes</span>
-          </button>
           <button
             onClick={onOpenSummarizer}
             className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 ${
@@ -82,13 +81,22 @@ export const Sidebar = ({
             <span className="font-['Comic_Sans_MS'] text-base">Summarizer</span>
           </button>
           <button
+            onClick={onOpenNotes}
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 ${
+              currentView === 'notes'
+                ? 'bg-purple-300 text-gray-800'
+                : 'text-gray-700 hover:bg-purple-200'
+            }`}
+          >
+            <FileText className="w-5 h-5" aria-hidden="true" />
+            <span className="font-['Comic_Sans_MS'] text-base">My Notes</span>
+          </button>
+          <button
             onClick={onOpenScreener}
             className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700 hover:bg-purple-200"
           >
             <Search className="w-5 h-5" aria-hidden="true" />
-            <span className="font-['Comic_Sans_MS'] text-base">
-              Check for Dyslexia
-            </span>
+            <span className="font-['Comic_Sans_MS'] text-base">Font Customizer</span>
           </button>
           <button
             onClick={onToggleDyslexic}
@@ -114,9 +122,7 @@ export const Sidebar = ({
             <span className="w-5 h-5" aria-hidden="true">
               ⭐
             </span>
-            <span className="font-['Comic_Sans_MS'] text-base">
-              Show Welcome
-            </span>
+            <span className="font-['Comic_Sans_MS'] text-base">Wanna Personalize??</span>
           </button>
         </div>
       </div>

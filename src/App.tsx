@@ -17,6 +17,7 @@ import {
 } from "./lib/screenerStore";
 import { useEffect } from "react";
 import { SummarizerPage } from "./components/SummarizerPage";
+import { NotesPage } from "./components/NotesPage";
 import { Project, Chat, Message, MindMapNode } from "./types";
 import { callOpenRouter } from "./services/openRouterService";
 
@@ -134,7 +135,12 @@ function App() {
   const [mindMapNodes] = useState<MindMapNode[]>(sampleMindMapNodes);
   const [isLoading, setIsLoading] = useState(false);
   const [currentView, setCurrentView] = useState<
-    "chat" | "summarizer" | "screener" | "pricing" | "questionnaire"
+    | "chat"
+    | "summarizer"
+    | "screener"
+    | "pricing"
+    | "questionnaire"
+    | "notes"
   >("chat");
 
   // Startup prompt state: show on first-run unless user skipped before
@@ -348,6 +354,7 @@ function App() {
           onOpenSummarizer={() => setCurrentView("summarizer")}
           onOpenScreener={() => setCurrentView("screener")}
           onOpenPricing={() => setCurrentView("pricing")}
+          onOpenNotes={() => setCurrentView("notes")}
           dyslexicEnabled={dyslexicEnabled}
           onToggleDyslexic={handleToggleDyslexic}
           currentView={currentView}
@@ -399,6 +406,8 @@ function App() {
             <SummarizerPage />
           ) : currentView === "screener" ? (
             <VisualCrowdingScreener onClose={() => setCurrentView("chat")} />
+          ) : currentView === "notes" ? (
+            <NotesPage />
           ) : (
             <PricingPage onClose={() => setCurrentView("chat")} />
           )}

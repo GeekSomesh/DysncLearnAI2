@@ -127,14 +127,16 @@ export const DyslexiaQuestionnaire: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-purple-100 to-yellow-50"></div>
+      {/* Cream paper background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#FFFFF0] via-[#F7FDEB] to-[#FFFDF2]"></div>
       <div className="relative min-h-screen flex items-center justify-center p-6">
-        <div className="w-full max-w-4xl bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-10">
+        {/* Paper card */}
+        <div className="w-full max-w-4xl bg-white rounded-2xl border-2 border-green-200 shadow-md p-8 md:p-10">
           <div className="mb-6">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 font-['Comic_Sans_MS']">
               Step {index + 1} of {QUESTIONS.length}
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4 text-gray-800">
+            <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4 text-gray-800 font-['Comic_Sans_MS']">
               {q.text}
             </h2>
           </div>
@@ -150,10 +152,10 @@ export const DyslexiaQuestionnaire: React.FC<{
               <button
                 key={opt.value}
                 onClick={() => setAnswer(index, opt.value as Response)}
-                className={`p-8 rounded-lg text-center text-lg font-medium shadow-sm border ${
+                className={`p-6 md:p-8 rounded-lg text-center text-lg font-medium shadow-sm border-2 font-['Comic_Sans_MS'] ${
                   answers[index] === opt.value
-                    ? "bg-indigo-50 border-indigo-300"
-                    : "bg-white border-gray-100"
+                    ? "bg-green-100 border-green-300"
+                    : "bg-[#FFFDF2] border-green-200 hover:bg-[#F9FFE8]"
                 }`}
               >
                 {opt.label}
@@ -166,13 +168,13 @@ export const DyslexiaQuestionnaire: React.FC<{
               <button
                 onClick={prev}
                 disabled={index === 0}
-                className="px-4 py-2 bg-gray-200 rounded mr-2"
+                className="px-4 py-2 bg-[#F1F5EB] text-gray-800 border-2 border-green-200 rounded mr-2"
               >
                 Back
               </button>
               <button
                 onClick={next}
-                className="px-4 py-2 bg-indigo-600 text-white rounded"
+                className="px-4 py-2 bg-green-400 hover:bg-green-500 text-gray-900 rounded border border-green-500"
               >
                 {index < QUESTIONS.length - 1 ? "Next" : "Finish"}
               </button>
