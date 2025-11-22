@@ -1,5 +1,5 @@
 <div align="center">
-<h1>DysLearnAI</h1>
+<h1>LexiLearn</h1>
 <p><em>Assistive AI platform with adaptive reading, chat, and personalization features for dyslexia and learning accessibility.</em></p>
 </div>
 
