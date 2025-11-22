@@ -25,13 +25,6 @@
 	box-shadow: 0 0 0 2px rgba(255,224,130,0.12) inset;
 }
 
-/* Ensure the highlighted lead text appears bold even with custom fonts */
-.bionic-lead,
-.bionic-lead .font-bold {
-	font-weight: 700 !important;
-	color: inherit; /* don't change text color */
-}
-
 .bionic-word.bionic-active {
 	/* subtle emphasis on the whole token */
 }
