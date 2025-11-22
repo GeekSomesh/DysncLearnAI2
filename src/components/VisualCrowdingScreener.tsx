@@ -4,7 +4,6 @@ import {
   loadResults,
   setRecommendationEnabled,
   getRecommendationStore,
-  applyRecommendations,
 } from "../lib/screenerStore";
 
 interface Props {
@@ -19,20 +18,11 @@ export const VisualCrowdingScreener = ({ onClose }: Props) => {
   const [recommendedEnabled, setRecommendedEnabled] = useState<boolean>(false);
   const [history, setHistory] = useState<any[]>([]);
 
-  // Apply live preview when sliders change (temporary, non-persistent)
-  useEffect(() => {
-    try {
-      // Apply recommendations live but do not persist to localStorage.
-      applyRecommendations({
-        enabled: true,
-        letterSpacing,
-        lineHeight,
-        fontWeight,
-      });
-    } catch (e) {
-      console.error("Failed to apply live preview", e);
-    }
-  }, [letterSpacing, lineHeight, fontWeight]);
+  // Note: live preview is applied locally via inline styles on the preview box below.
+  // We avoid calling `applyRecommendations` here so the site-wide font doesn't toggle
+  // while the user is adjusting sliders. Persisted recommendations are applied
+  // explicitly via the "Enable Recommended" button or the Toggle Recommendation
+  // control which calls `setRecommendationEnabled`.
 
   const sampleText = `The quick brown fox jumps over the lazy dog. This passage is intentionally dense to challenge the visual processing system. Adjust the sliders until the text stops 'swimming' or feels comfortable.`;
 
@@ -180,7 +170,17 @@ export const VisualCrowdingScreener = ({ onClose }: Props) => {
           </button>
           <button
             onClick={() => {
-              setRecommendedEnabled(!recommendedEnabled);
+              const newVal = !recommendedEnabled;
+              if (newVal) {
+                setRecommendationEnabled(true, {
+                  letterSpacing,
+                  lineHeight,
+                  fontWeight,
+                });
+              } else {
+                setRecommendationEnabled(false);
+              }
+              setRecommendedEnabled(newVal);
             }}
             className="px-4 py-2 bg-blue-300 text-white rounded"
           >

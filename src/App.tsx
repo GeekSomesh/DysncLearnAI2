@@ -7,6 +7,9 @@ import { InputBar } from "./components/InputBar";
 import { MindMapPanel } from "./components/MindMapPanel";
 import { VisualCrowdingScreener } from "./components/VisualCrowdingScreener";
 import { PricingPage } from "./components/PricingPage";
+import StartupScreener from "./components/StartupScreener";
+import DyslexiaQuestionnaire from "./components/DyslexiaQuestionnaire";
+import Scorecard from "./components/Scorecard";
 import {
   initRecommendationsFromStore,
   getRecommendationStore,
@@ -131,13 +134,61 @@ function App() {
   const [mindMapNodes] = useState<MindMapNode[]>(sampleMindMapNodes);
   const [isLoading, setIsLoading] = useState(false);
   const [currentView, setCurrentView] = useState<
-    "chat" | "summarizer" | "screener" | "pricing"
+    "chat" | "summarizer" | "screener" | "pricing" | "questionnaire"
   >("chat");
+
+  // Startup prompt state: show on first-run unless user skipped before
+  const [showStartupPrompt, setShowStartupPrompt] = useState<boolean>(() => {
+    try {
+      const skip = localStorage.getItem("skipStartupScreener");
+      return !skip;
+    } catch (e) {
+      return true;
+    }
+  });
+
+  const [lastQuestionnaireResult, setLastQuestionnaireResult] = useState<
+    any | null
+  >(null);
 
   useEffect(() => {
     // Apply any saved recommendation preferences on app start
     initRecommendationsFromStore();
     console.log("App mounted — React root is active.");
+    try {
+      const skip = localStorage.getItem("skipStartupScreener");
+      const lastQ = localStorage.getItem("last_questionnaire_result");
+      console.log("[startup-debug] skipStartupScreener=", skip);
+      console.log("[startup-debug] last_questionnaire_result=", lastQ);
+      console.log(
+        "[startup-debug] initial showStartupPrompt=",
+        showStartupPrompt
+      );
+    } catch (e) {
+      console.log("[startup-debug] localStorage not accessible", e);
+    }
+    // URL override: visit the app with ?showWelcome=1 to force the welcome screener
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("showWelcome") === "1") {
+        try {
+          localStorage.removeItem("skipStartupScreener");
+        } catch (e) {}
+        setShowStartupPrompt(true);
+      }
+    } catch (e) {
+      // ignore
+    }
+    // Defensive re-check: if the skip flag is not present, ensure the prompt shows.
+    // This handles cases where localStorage changed or the initial state was evaluated differently.
+    try {
+      const skipNow = localStorage.getItem("skipStartupScreener");
+      if (!skipNow) {
+        setShowStartupPrompt(true);
+      }
+    } catch (e) {
+      // ignore
+    }
   }, []);
 
   // Dyslexic font toggle state
@@ -149,8 +200,9 @@ function App() {
   }, []);
 
   const handleToggleDyslexic = () => {
+    // Toggle based on the current UI state to avoid relying on possibly stale store values
     const store = getRecommendationStore();
-    if (store && store.enabled) {
+    if (dyslexicEnabled) {
       // disable
       setRecommendationEnabled(false);
       setDyslexicEnabled(false);
@@ -163,6 +215,38 @@ function App() {
       setDyslexicEnabled(true);
     }
   };
+
+  function handleStartupYes() {
+    setShowStartupPrompt(false);
+    setCurrentView("questionnaire");
+  }
+
+  function handleStartupSkip() {
+    try {
+      localStorage.setItem("skipStartupScreener", "1");
+    } catch (e) {}
+    setShowStartupPrompt(false);
+    setCurrentView("chat");
+  }
+
+  function handleQuestionnaireComplete(result: any) {
+    // store last result for scorecard display and optionally persist
+    setLastQuestionnaireResult(result);
+    // show scorecard view inside the app by replacing currentView with chat after user proceeds
+    setCurrentView("chat");
+    // persist the questionnaire result for future reference
+    try {
+      localStorage.setItem("last_questionnaire_result", JSON.stringify(result));
+    } catch (e) {}
+    // show scorecard by setting a small flag - we'll render it as a temporary overlay below
+    setShowScorecard(true);
+  }
+
+  const [showScorecard, setShowScorecard] = useState(false);
+
+  function handleContinueFromScorecard() {
+    setShowScorecard(false);
+  }
 
   const selectedChat = chats.find((chat) => chat.id === selectedChatId);
   const chatMessages = messages.filter((msg) => msg.chat_id === selectedChatId);
@@ -267,10 +351,27 @@ function App() {
           dyslexicEnabled={dyslexicEnabled}
           onToggleDyslexic={handleToggleDyslexic}
           currentView={currentView}
+          onShowStartup={() => {
+            try {
+              localStorage.removeItem("skipStartupScreener");
+            } catch (e) {}
+            setShowStartupPrompt(true);
+            // bring user to chat area while welcome is visible
+            setCurrentView("chat");
+          }}
         />
       </div>
 
       <main className="flex-1 flex flex-col overflow-hidden">
+        {showStartupPrompt && (
+          <StartupScreener
+            onYes={handleStartupYes}
+            onSkip={handleStartupSkip}
+          />
+        )}
+        {currentView === "questionnaire" && (
+          <DyslexiaQuestionnaire onComplete={handleQuestionnaireComplete} />
+        )}
         <ErrorBoundary>
           {currentView === "chat" ? (
             <div className="flex-1 flex flex-col overflow-hidden">
@@ -303,6 +404,39 @@ function App() {
           )}
         </ErrorBoundary>
       </main>
+      {/* Floating button to reopen the welcome screener (visible on all sizes) */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => {
+            // clear skip flag for a fresh run and show the prompt so we can debug reliably
+            try {
+              localStorage.removeItem("skipStartupScreener");
+            } catch (e) {}
+            setShowStartupPrompt(true);
+          }}
+          aria-label="Show welcome screener"
+          className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        >
+          ⭐ Welcome
+        </button>
+      </div>
+      {showScorecard && lastQuestionnaireResult ? (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-purple-100 to-yellow-50"></div>
+          <div className="relative min-h-screen flex items-center justify-center p-6">
+            <div className="w-full max-w-3xl">
+              <Scorecard
+                total={lastQuestionnaireResult.total}
+                max={lastQuestionnaireResult.max}
+                percent={lastQuestionnaireResult.percent}
+                band={lastQuestionnaireResult.band}
+                categories={lastQuestionnaireResult.categories}
+                onContinue={handleContinueFromScorecard}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

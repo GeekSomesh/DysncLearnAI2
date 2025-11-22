@@ -20,7 +20,13 @@ interface SidebarProps {
   onOpenPricing?: () => void;
   dyslexicEnabled?: boolean;
   onToggleDyslexic?: () => void;
-  currentView?: "chat" | "summarizer" | "screener" | "pricing";
+  onShowStartup?: () => void;
+  currentView?:
+    | "chat"
+    | "summarizer"
+    | "screener"
+    | "pricing"
+    | "questionnaire";
 }
 
 export const Sidebar = ({
@@ -33,6 +39,7 @@ export const Sidebar = ({
   onOpenPricing,
   dyslexicEnabled,
   onToggleDyslexic,
+  onShowStartup,
   currentView,
 }: SidebarProps) => {
   return (
@@ -98,6 +105,19 @@ export const Sidebar = ({
               Dyslexic Font: {dyslexicEnabled ? "On" : "Off"}
             </span>
           </button>
+
+          {/* Show welcome/startup screener again for testing or if user wants to re-run */}
+          <button
+            onClick={() => onShowStartup?.()}
+            className="w-full flex items-center gap-3 px-4 py-2 rounded-lg mt-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700 hover:bg-purple-200"
+          >
+            <span className="w-5 h-5" aria-hidden="true">
+              ⭐
+            </span>
+            <span className="font-['Comic_Sans_MS'] text-base">
+              Show Welcome
+            </span>
+          </button>
         </div>
       </div>
 
@@ -127,7 +147,10 @@ export const Sidebar = ({
         </div>
       </div>
 
-      <button onClick={onOpenPricing} className="w-full bg-green-300 hover:bg-green-400 text-gray-800 font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 focus:outline-none focus:ring-4 focus:ring-green-500">
+      <button
+        onClick={onOpenPricing}
+        className="w-full bg-green-300 hover:bg-green-400 text-gray-800 font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 focus:outline-none focus:ring-4 focus:ring-green-500"
+      >
         <Zap className="w-5 h-5" aria-hidden="true" />
         <span className="font-['Comic_Sans_MS']">Upgrade to Plus</span>
       </button>
