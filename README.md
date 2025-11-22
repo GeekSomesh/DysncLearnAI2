@@ -22,7 +22,7 @@
 16. Roadmap / Future Ideas
 
 ## 1. Overview
-DysLearnAI provides an accessible interface for students or users with reading challenges. It includes a chat assistant, summarization, notes, visual crowding screener, font customization, and mind mapping.
+LexiLearn provides an accessible interface for students or users with reading challenges. It includes a chat assistant, summarization, notes, visual crowding screener, font customization, and mind mapping.
 
 ## 2. Core Features
 - Chat assistant with multi-turn conversation persistence per user.
@@ -92,7 +92,7 @@ Restart dev servers after editing `.env`.
 ## 8. Auth0 Configuration
 1. Create a SPA application.
 2. Set Allowed Callback URLs, Logout URLs, Web Origins to your dev origin: `http://localhost:5173`.
-3. (Optional) Create an API in Auth0 for Access Tokens (Identifier e.g. `https://dyslearnai.api`).
+3. (Optional) Create an API in Auth0 for Access Tokens (Identifier e.g. `https://LexiLearn.api`).
 4. Use RS256 (default). Note your Domain and Client ID.
 
 ## 9. Supabase Configuration & Migrations
