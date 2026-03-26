@@ -1,6 +1,9 @@
 <div align="center">
 <h1>LexiLearn</h1>
 <p><em>Assistive AI platform with adaptive reading, chat, and personalization features for dyslexia and learning accessibility.</em></p>
+<p>
+  <img src="./image.png" alt="DysLearnAI application preview" width="900" />
+</p>
 </div>
 
 ## Table of Contents
